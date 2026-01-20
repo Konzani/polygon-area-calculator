@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Polygon Area Calculator</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="page">
+      <header class="hero">
+        <div>
+          <p class="eyebrow">Geometry tool</p>
+          <h1>Polygon Area Calculator</h1>
+          <p class="subhead">
+            Enter polygon vertices in order (clockwise or counter-clockwise) to
+            calculate area using the shoelace formula.
+          </p>
+        </div>
+        <div class="stats">
+          <div>
+            <span id="vertexCount">0</span>
+            <small>Vertices</small>
+          </div>
+          <div>
+            <span id="unitLabel">square units</span>
+            <small>Output unit</small>
+          </div>
+        </div>
+      </header>
+
+      <main class="grid">
+        <section class="card">
+          <h2>Vertices</h2>
+          <p class="hint">
+            Add as many points as you need. The calculator automatically closes
+            the polygon between the last and first vertex.
+          </p>
+
+          <form id="pointForm" class="row">
+            <label>
+              X coordinate
+              <input type="number" step="any" name="x" required />
+            </label>
+            <label>
+              Y coordinate
+              <input type="number" step="any" name="y" required />
+            </label>
+            <button type="submit" class="primary">Add point</button>
+          </form>
+
+          <div class="table">
+            <div class="table-header">
+              <span>#</span>
+              <span>X</span>
+              <span>Y</span>
+              <span>Actions</span>
+            </div>
+            <div id="pointList" class="table-body"></div>
+          </div>
+
+          <div class="actions">
+            <button type="button" id="clearPoints">Clear points</button>
+            <button type="button" id="loadSample">Load sample</button>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2>Area</h2>
+          <div class="result" id="areaResult">
+            <span class="value">0</span>
+            <span class="unit">square units</span>
+          </div>
+
+          <label class="full">
+            Output unit label
+            <input type="text" id="unitInput" placeholder="square meters" />
+          </label>
+
+          <div class="explain">
+            <h3>How it works</h3>
+            <ol>
+              <li>List vertices in order around the polygon.</li>
+              <li>We multiply x by the next y, and y by the next x.</li>
+              <li>
+                The absolute difference divided by 2 gives the polygon area.
+              </li>
+            </ol>
+          </div>
+
+          <div class="alert" id="alertBox" aria-live="polite"></div>
+        </section>
+      </main>
+    </div>
+    <script src="script.js"></script>
+  </body>
+</html>

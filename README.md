@@ -1,19 +1,20 @@
-# Polygon Area Calculator
+# Geodesia Polygon Area Calculator
 
-A lightweight web-based polygon area calculator. Add vertices in order and the
-app calculates the area using the shoelace formula.
+A lightweight web tool for calculating polygon area & perimeter from coordinate input.
+
+Live: https://geodesia.online/geosurveypro/tools/polygon-area-calculator
+
+## Input
+- Local Grid (XY)
+- UTM (WGS84)
+- Geographic (Lon/Lat)
 
 ## Features
-- Add/remove vertices interactively.
-- Automatic area updates with validation.
-- Custom output units.
-- Sample polygon loader for quick demos.
+- Area + perimeter
+- Segment distances + bearings
+- Import: CSV / Excel / KML
+- Export: PDF / Excel / CSV
 
-## Run locally
-Open \`index.html\` in any modern browser. For a local server:
-
-\`\`\`bash
-python3 -m http.server 8000
-\`\`\`
-
-Then visit \`http://localhost:8000\`.
+## Notes
+- Results depend on correct coordinate reference system selection.
+- For professional surveying workflows, always validate with your project control and datum.

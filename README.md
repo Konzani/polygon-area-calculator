@@ -18,3 +18,13 @@ Live: https://geodesia.online/geosurveypro/tools/polygon-area-calculator
 ## Notes
 - Results depend on correct coordinate reference system selection.
 - For professional surveying workflows, always validate with your project control and datum.
+
+# Third-Party Notices
+
+This project includes the following third-party libraries (see their respective licenses):
+
+- SheetJS (XLSX)
+- jsPDF
+- Proj4js
+- GeographicLib
+- Font Awesome (CDN)

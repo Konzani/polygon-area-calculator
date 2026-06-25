@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="GEODESIA Pro v6.1 - Survey Computation Engine" />
+  <title>GEODESIA Pro | Survey Engine v6.1</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+
+  <!-- Icons + App Styles -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="stylesheet" href="./styles.css" />
+
+  <!--  Self-hosted vendor libs (local) -->
+  <script src="./vendor/xlsx.full.min.js" defer></script>
+  <script src="./vendor/jspdf.umd.min.js" defer></script>
+  <script src="./vendor/proj4.js" defer></script>
+  <script src="./vendor/geographiclib.min.js" defer></script>
+
+  <!--  App (minified) -->
+  <script src="./calculator.min.js" defer></script>
+</head>
+
+<body>
+  <noscript>
+    <div style="padding:12px; margin:12px; border:1px solid #e2e8f0; border-radius:8px; font-family:system-ui;">
+      This tool requires JavaScript enabled to run computations and exports.
+    </div>
+  </noscript>
+
+  <div class="app-layout">
+    <aside class="sidebar">
+      <div class="brand-header">
+        <div class="logo">
+          <i class="fa-solid fa-layer-group" aria-hidden="true"></i>
+          <span>GEODESIA <small>PRO v6.1</small></span>
+        </div>
+      </div>
+
+      <div class="sidebar-scroll custom-scrollbar">
+        <div class="control-group">
+          <label class="group-label" for="coordinateSystem">Reference System</label>
+
+          <select id="coordinateSystem" class="input-dark">
+            <option value="xy" selected>Local Grid (XY)</option>
+            <option value="utm">UTM (WGS84)</option>
+            <option value="lonlat">Geographic (Lon/Lat)</option>
+          </select>
+
+          <div class="checkbox-group">
+            <label class="checkbox-item">
+              <input type="checkbox" id="optGeodesicPerimeter" />
+              <span>Geodesic Results</span>
+            </label>
+            <label class="checkbox-item">
+              <input type="checkbox" id="optGround" />
+              <span>Ground (CSF)</span>
+            </label>
+          </div>
+
+          <div id="optHint" class="hint-text">
+            XY mode: Grid results available. Geodesic/Ground need geographic reference.
+          </div>
+        </div>
+
+        <div id="utmFields" class="control-group" style="display:none;">
+          <label class="group-label">UTM Definition</label>
+          <div class="row gap-2">
+            <input type="number" id="utmZone" class="input-dark" value="37" placeholder="Zone" />
+            <select id="utmHemisphere" class="input-dark" aria-label="UTM Hemisphere">
+              <option value="S">South</option>
+              <option value="N">North</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="elevationRow" class="control-group" style="display:none;">
+          <label class="group-label" for="meanElevation">Mean Elevation (m)</label>
+          <input type="number" id="meanElevation" class="input-dark" placeholder="0.00" />
+        </div>
+
+        <div class="control-group flex-grow">
+          <div class="group-header">
+            <label class="group-label" for="coordinatesInput">Coordinates</label>
+            <div class="group-actions">
+              <button id="clearInputBtn" title="Clear All" aria-label="Clear all coordinates">
+                <i class="fa-solid fa-eraser" aria-hidden="true"></i>
+              </button>
+              <button id="sampleDataBtn" title="Load Sample" aria-label="Load sample coordinates">
+                <i class="fa-solid fa-flask" aria-hidden="true"></i>
+              </button>
+            </div>
+          </div>
+
+          <div id="fileUploadArea" class="drop-zone" role="button" tabindex="0" aria-label="Import CSV, Excel, or KML">
+            <i class="fa-solid fa-cloud-arrow-up" aria-hidden="true"></i>
+            <span>Import CSV / Excel / KML</span>
+            <input type="file" id="fileInput" accept=".csv,.txt,.xlsx,.xls,.kml" hidden />
+          </div>
+
+          <div class="editor-wrapper">
+            <textarea
+              id="coordinatesInput"
+              class="code-editor"
+              spellcheck="false"
+              placeholder="Paste coordinates here...&#10;1000, 1000&#10;1500, 1000&#10;1500, 1500&#10;1000, 1500"
+            ></textarea>
+            <div id="lineCount" class="status-bar" aria-live="polite">0 pts</div>
+          </div>
+
+          <div id="inputMessages" aria-live="polite" aria-atomic="true"></div>
+        </div>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="method-info">
+          <div class="method-header">
+            <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+            <span id="methodTitle">Calculation Basis</span>
+          </div>
+          <p id="methodDescription">Loading...</p>
+        </div>
+
+        <button id="calculateBtn" class="btn-primary">
+          <i class="fa-solid fa-calculator" aria-hidden="true"></i> COMPUTE GEOMETRY
+        </button>
+      </div>
+    </aside>
+
+    <main class="viewport">
+      <header class="toolbar">
+        <div class="breadcrumbs">
+          <span id="calculationMethod" aria-live="polite">
+            <i class="fa-solid fa-circle-check" aria-hidden="true"></i> System Ready
+          </span>
+          <span class="divider">/</span>
+          <span id="accuracyStatus" aria-live="polite">Waiting for input</span>
+        </div>
+
+        <div class="toolbar-actions">
+          <button id="clearAllBtn" class="btn-ghost" aria-label="Reset tool">
+            <i class="fa-solid fa-rotate-right" aria-hidden="true"></i> Reset
+          </button>
+
+          <div class="dropdown">
+            <button class="btn-secondary" type="button" aria-haspopup="true" aria-expanded="false">
+              <i class="fa-solid fa-download" aria-hidden="true"></i> Export
+            </button>
+
+            <div class="dropdown-menu" role="menu" aria-label="Export options">
+              <button type="button" id="exportPDFBtn" role="menuitem">
+                <i class="fa-solid fa-file-pdf" aria-hidden="true"></i> PDF Report
+              </button>
+              <button type="button" id="exportExcelBtn" role="menuitem">
+                <i class="fa-solid fa-file-excel" aria-hidden="true"></i> Excel Data
+              </button>
+              <button type="button" id="exportCSVBtn" role="menuitem">
+                <i class="fa-solid fa-file-csv" aria-hidden="true"></i> CSV Raw
+              </button>
+              <button type="button" id="copyResultsBtn" role="menuitem">
+                <i class="fa-solid fa-copy" aria-hidden="true"></i> Copy Text
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div class="workspace">
+        <canvas id="polygonCanvas"></canvas>
+
+        <div id="emptyState" class="empty-state">
+          <i class="fa-solid fa-compass-drafting" aria-hidden="true"></i>
+          <h3>Ready to Survey</h3>
+          <p>Import data or type coordinates to visualize geometry.</p>
+        </div>
+
+        <div id="resultsContainer" class="hud-container" style="display:none;">
+          <div class="hud-card primary">
+            <span class="label">Grid Area</span>
+            <div class="value" id="areaSquareMeters">0.00</div>
+            <span class="unit">m² (Planar)</span>
+            <div class="sub-value">
+              <span id="areaHectares">0.00 ha</span> • <span id="areaAcres">0.00 ac</span>
+            </div>
+          </div>
+
+          <div class="hud-card">
+            <span class="label">Grid Perimeter</span>
+            <div class="value" id="perimeterGridValue">0.00</div>
+            <span class="unit">meters</span>
+          </div>
+
+          <div id="hudGeodesic" class="hud-card" style="display:none;">
+            <span class="label">Geodesic Perimeter</span>
+            <div class="value" id="perimeterGeodesicValue">0.00</div>
+            <span class="unit">meters (Ellipsoidal)</span>
+
+            <div class="sub-value" style="margin-top:8px; border-top:1px solid var(--border-light); padding-top:6px;">
+              <span class="label" style="font-size:0.65rem;">Geodesic Area</span>
+              <div id="areaGeodesicSquareMeters" style="font-family:var(--font-mono); font-weight:600;">0.00</div>
+              <span class="unit" style="font-size:0.7rem;">m²</span>
+            </div>
+          </div>
+
+          <div id="hudGround" class="hud-card" style="display:none;">
+            <span class="label">Ground Perimeter</span>
+            <div class="value" id="perimeterGroundValue">0.00</div>
+            <span class="unit">meters (CSF)</span>
+          </div>
+
+          <div id="hudGroundArea" class="hud-card" style="display:none;">
+            <span class="label">Ground Area</span>
+            <div class="value" id="areaGroundSquareMeters">0.00</div>
+            <span class="unit">m² (CSF)</span>
+          </div>
+        </div>
+      </div>
+
+      <section class="bottom-panel">
+        <div class="panel-header">
+          <h3>Segment Analysis</h3>
+          <span id="segmentCount" style="color:#64748b;">0 Segments</span>
+        </div>
+
+        <div class="table-wrapper custom-scrollbar">
+          <table>
+            <thead>
+              <tr>
+                <th>Pt ID</th>
+                <th>Easting (X)</th>
+                <th>Northing (Y)</th>
+                <th>Vector</th>
+                <th>Grid Dist</th>
+                <th>Bearing</th>
+                <th id="thGeodesic" style="display:none;">Geodesic</th>
+                <th id="thGround" style="display:none;">Ground</th>
+              </tr>
+            </thead>
+            <tbody id="coordinatesTableBody"></tbody>
+            <tfoot>
+              <tr>
+                <td colspan="4" class="text-right bold">Total:</td>
+                <td id="tableTotalPerimeter" class="bold">0.00 m</td>
+                <td></td>
+                <td id="tdGeodesicTotal" style="display:none;">0.00 m</td>
+                <td id="tdGroundTotal" style="display:none;">0.00 m</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="loadingIndicator" class="loader-overlay" style="display:none;" role="status" aria-live="polite" aria-label="Loading">
+    <div class="loader"></div>
+  </div>
+</body>
+</html>

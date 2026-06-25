@@ -2,7 +2,7 @@
 
 A lightweight web tool for calculating polygon area & perimeter from coordinate input.
 
-Temporarily live at : https://geodesia.online/geosurveypro/tools/polygon-area-calculator
+Temporarily live at : https://geodesia.online/geosurveypro/polygon-area-calculator
 
 ## Input
 - Local Grid (XY)
